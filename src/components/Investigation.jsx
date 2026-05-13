@@ -155,13 +155,13 @@ function InvHeader({ inc, onBack, activeTab, setActiveTab }) {
           <Icon name="arrow" style={{ transform: 'rotate(180deg)' }} /> All Incidents
         </button>
         <div className="inv-header-title">
-          <SevTag sev={inc.sev} />
+          <SevTag level={inc.severity} />
           <h2>{inc.title}</h2>
           <StatusPill status={inc.status} />
         </div>
         <div className="inv-header-meta">
-          <span className="text-muted"><Icon name="clock" /> {inc.date}</span>
-          <span className="text-muted"><Icon name="pin" /> {inc.location}</span>
+          <span className="text-muted"><Icon name="clock" /> {inc.opened}</span>
+          <span className="text-muted"><Icon name="pin" /> {inc.platform}</span>
         </div>
       </div>
       <nav className="inv-tabs">
@@ -206,7 +206,7 @@ function StatDrawer({ statKey, onClose }) {
 function OverviewTab({ inc }) {
   const [drawerKey, setDrawerKey] = useState(null);
   const [editDesc, setEditDesc] = useState(false);
-  const [desc, setDesc] = useState(inc.description || 'High-pressure gas release during routine valve maintenance. Trigger event identified as over-pressurisation of the manifold due to a blocked condensate drain. No injuries reported; facility evacuated as precaution.');
+  const [desc, setDesc] = useState(inc.sub || 'High-pressure gas release during routine valve maintenance. Trigger event identified as over-pressurisation of the manifold due to a blocked condensate drain. No injuries reported; facility evacuated as precaution.');
 
   const stats = [
     { key: 'evidence', label: 'Evidence Items',       value: EVIDENCE_INIT.length },
@@ -237,12 +237,12 @@ function OverviewTab({ inc }) {
           <ul className="signoff-list">
             {SIGNOFF.map(s => (
               <li key={s.role} className="signoff-item">
-                <Avatar name={s.name} size={28} />
+                <Avatar initials={s.init} size={28} />
                 <div>
                   <div className="signoff-name">{s.name}</div>
                   <div className="text-muted">{s.role}</div>
                 </div>
-                <StatusPill status={s.status} />
+                <StatusPill status={s.status === 'signed' ? 'complete' : s.status} />
               </li>
             ))}
           </ul>
@@ -264,12 +264,13 @@ function OverviewTab({ inc }) {
         <section className="card overview-meta">
           <div className="card-header"><h3>Incident Details</h3></div>
           <dl className="meta-dl">
-            <dt>Severity</dt>        <dd><SevTag sev={inc.sev} /></dd>
-            <dt>Date / Time</dt>     <dd>{inc.date}</dd>
-            <dt>Location</dt>        <dd>{inc.location}</dd>
-            <dt>Lead Investigator</dt><dd>{inc.lead}</dd>
+            <dt>Severity</dt>        <dd><SevTag level={inc.severity} /></dd>
+            <dt>Opened</dt>          <dd>{inc.opened}</dd>
+            <dt>Platform</dt>        <dd>{inc.platform}</dd>
+            <dt>Lead Investigator</dt><dd>{inc.lead?.name}</dd>
+            <dt>Phase</dt>           <dd>{inc.phase}</dd>
             <dt>Status</dt>          <dd><StatusPill status={inc.status} /></dd>
-            <dt>Report Due</dt>      <dd className={inc.overdue ? 'text-danger' : ''}>{inc.due}{inc.overdue ? ' — Overdue' : ''}</dd>
+            <dt>Report Due</dt>      <dd>{inc.due}</dd>
           </dl>
         </section>
       </div>
@@ -521,7 +522,8 @@ function ExportMenu({ onClose }) {
 }
 
 function TimelineTab({ evidence }) {
-  const [events, setEvents] = useState(TIMELINE_INIT);
+  const flattened = TIMELINE_INIT.flatMap(d => (d.events || []).map(e => ({ ...e, day: d.day, time: e.t || e.time, type: e.kind || e.type || 'Action', source: e.sub || e.source || '', desc: e.sub || e.desc || '' })));
+  const [events, setEvents] = useState(flattened);
   const [showAdd, setShowAdd] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showInsuff, setShowInsuff] = useState(false);
@@ -530,7 +532,7 @@ function TimelineTab({ evidence }) {
   const [shiftToast, setShiftToast] = useState(false);
 
   const addEvent = ev => {
-    setEvents(prev => [...prev, ev].sort((a, b) => a.time.localeCompare(b.time)));
+    setEvents(prev => [...prev, ev].sort((a, b) => (a.time || '').localeCompare(b.time || '')));
   };
 
   const handleAI = () => {
@@ -633,7 +635,7 @@ function FiveWhysEditModal({ step, onSave, onClose }) {
 
 function FiveWhysTab({ evidence, timeline }) {
   const [whys, setWhys] = useState(FIVE_WHYS_INIT);
-  const [problem, setProblem] = useState(FW_PROBLEM);
+  const [problem, setProblem] = useState(FW_PROBLEM?.statement || '');
   const [editStep, setEditStep] = useState(null);
   const [showAI, setShowAI] = useState(false);
   const [showInsuff, setShowInsuff] = useState(false);
@@ -671,26 +673,30 @@ function FiveWhysTab({ evidence, timeline }) {
       </div>
 
       <div className="fw-chain">
-        {whys.map((w, i) => (
-          <div key={w.id} className="fw-step">
-            <div className="fw-step-num">Why {i + 1}</div>
-            <div className="fw-step-body card">
-              <p>{w.text}</p>
-              <div className="fw-step-footer">
-                <span className={`badge ${badgeClass(w.verified)}`}>{w.verified}</span>
-                {w.evidence && <span className="text-muted">→ {w.evidence}</span>}
-                <button className="btn-ghost ml-auto" onClick={() => setEditStep(w)}><Icon name="edit" /></button>
+        {whys.map((w, i) => {
+          const verLabel = w.verification ? w.verification.charAt(0).toUpperCase() + w.verification.slice(1) : (w.verified || 'Unverified');
+          const evList = Array.isArray(w.evidence) ? w.evidence.join(', ') : w.evidence;
+          return (
+            <div key={w.id || w.n || i} className="fw-step">
+              <div className="fw-step-num">Why {w.n || (i + 1)} — {w.q || w.text}</div>
+              <div className="fw-step-body card">
+                <p>{w.a || w.text}</p>
+                <div className="fw-step-footer">
+                  <span className={`badge ${badgeClass(verLabel)}`}>{verLabel}</span>
+                  {evList && <span className="text-muted">→ {evList}</span>}
+                  <button className="btn-ghost ml-auto" onClick={() => setEditStep(w)}><Icon name="edit" /></button>
+                </div>
               </div>
+              {i < whys.length - 1 && <div className="fw-arrow"><Icon name="arrow" style={{ transform: 'rotate(90deg)' }} /></div>}
             </div>
-            {i < whys.length - 1 && <div className="fw-arrow"><Icon name="arrow" style={{ transform: 'rotate(90deg)' }} /></div>}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {verifyMeta && (
         <div className="card fw-verify-meta">
           <h4>Verification Summary</h4>
-          <p className="text-muted">{verifyMeta.summary}</p>
+          <p className="text-muted">{Object.values(verifyMeta).map(v => v.desc).join(' · ')}</p>
           <label className="method-toggle fw-confirm">
             <input type="checkbox" checked={rootConfirmed} onChange={e => setRootConfirmed(e.target.checked)} />
             <span>Root cause confirmed and documented</span>
@@ -971,25 +977,30 @@ function IcamTab({ evidence, timeline, whys }) {
       </div>
 
       <div className="icam-grid">
-        {ICAM_COLS.map(col => (
-          <div key={col} className="icam-col card">
-            <div className="icam-col-header"><h4>{col}</h4></div>
-            <ul className="icam-factor-list">
-              {factors.filter(f => f.col === col).map(f => (
-                <li key={f.id} className="icam-factor-item">
-                  <span>{f.text}</span>
-                  <div className="icam-factor-actions">
-                    <button className="btn-ghost" onClick={() => setEditFactor(f)}><Icon name="edit" /></button>
-                    <button className="btn-ghost text-danger" onClick={() => deleteFactor(f.id)}><Icon name="x" /></button>
-                  </div>
-                </li>
-              ))}
-              {factors.filter(f => f.col === col).length === 0 && (
-                <li className="icam-factor-empty text-muted">No factors added</li>
-              )}
-            </ul>
-          </div>
-        ))}
+        {ICAM_COLS.map((col, idx) => {
+          const kindMap = ['defence', 'action', 'condition', 'org'];
+          const kindFor = kindMap[idx];
+          const colFactors = factors.filter(f => (f.col === col) || (f.kind === kindFor));
+          return (
+            <div key={col} className="icam-col card">
+              <div className="icam-col-header"><h4>{col}</h4></div>
+              <ul className="icam-factor-list">
+                {colFactors.map(f => (
+                  <li key={f.id} className="icam-factor-item">
+                    <span>{f.text || f.title}</span>
+                    <div className="icam-factor-actions">
+                      <button className="btn-ghost" onClick={() => setEditFactor(f)}><Icon name="edit" /></button>
+                      <button className="btn-ghost text-danger" onClick={() => deleteFactor(f.id)}><Icon name="x" /></button>
+                    </div>
+                  </li>
+                ))}
+                {colFactors.length === 0 && (
+                  <li className="icam-factor-empty text-muted">No factors added</li>
+                )}
+              </ul>
+            </div>
+          );
+        })}
       </div>
 
       <div className="tab-toolbar mt-6">
@@ -1130,11 +1141,12 @@ function EvidenceTab() {
             <div className="evidence-card-header">
               <Icon name="link" />
               <strong>{ev.title}</strong>
-              <StatusPill status={ev.status} />
+              {ev.status && <StatusPill status={ev.status} />}
             </div>
             <div className="evidence-card-meta">
               <span className="pill pill-sm">{ev.type}</span>
-              {ev.date && <span className="text-muted">{ev.date}</span>}
+              {(ev.when || ev.date) && <span className="text-muted">{ev.when || ev.date}</span>}
+              {ev.by && <span className="text-muted">by {ev.by}</span>}
             </div>
             {ev.desc && <p className="text-muted evidence-desc">{ev.desc}</p>}
           </div>
@@ -1248,22 +1260,25 @@ function ActionsTab() {
       </div>
 
       <div className="actions-list">
-        {actions.map(a => (
+        {actions.map(a => {
+          const status = a.status || a.col || 'open';
+          return (
           <div key={a.id} className="card action-card">
             <div className="action-card-header">
-              <div className="action-status-dot" style={{ background: statusColor(a.status) }} />
+              <div className="action-status-dot" style={{ background: statusColor(status) }} />
               <strong>{a.title}</strong>
-              <StatusPill status={a.status} />
+              <StatusPill status={status} />
               <button className="btn-ghost ml-auto" onClick={() => setEditAction(a)}><Icon name="edit" /></button>
             </div>
             <div className="action-card-meta">
-              <span className="text-muted"><Icon name="pin" /> {a.owner}</span>
+              <span className="text-muted"><Icon name="pin" /> {a.ownerName || a.owner}</span>
               <span className="text-muted"><Icon name="clock" /> {a.due}</span>
-              <span className="pill pill-sm">{a.level}</span>
+              {(a.level || a.priority) && <span className="pill pill-sm">{a.level || a.priority}</span>}
             </div>
             {a.desc && <p className="text-muted">{a.desc}</p>}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {(editAction || addingAction) && (
@@ -1449,7 +1464,7 @@ function InterviewsTab({ evidence }) {
         {interviews.map(iv => (
           <div key={iv.id} className="card interview-card">
             <div className="interview-card-header">
-              <Avatar name={iv.name} size={36} />
+              <Avatar initials={iv.name.split(' ').map(n => n[0]).join('').slice(0, 2)} size={36} />
               <div>
                 <div className="interview-name">{iv.name}</div>
                 <div className="text-muted">{iv.role}</div>
