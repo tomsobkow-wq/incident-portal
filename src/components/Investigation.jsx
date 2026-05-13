@@ -149,9 +149,9 @@ function generateQuestionsFromEvidence(evidence) {
 function InvHeader({ inc, onBack, activeTab, setActiveTab }) {
   const tabs = ['Overview', 'Timeline', '5 Whys', 'ICAM', 'HFAT', 'PEEPO', 'Evidence', 'Actions', 'Interviews', 'Report'];
   return (
-    <header className="inv-header">
+    <div className="inv-header-wrap">
       <div className="inv-header-top">
-        <button className="btn-ghost" onClick={onBack}>
+        <button className="btn ghost" onClick={onBack}>
           <Icon name="arrow" style={{ transform: 'rotate(180deg)' }} /> All Incidents
         </button>
         <div className="inv-header-title">
@@ -160,11 +160,11 @@ function InvHeader({ inc, onBack, activeTab, setActiveTab }) {
           <StatusPill status={inc.status} />
         </div>
         <div className="inv-header-meta">
-          <span className="text-muted"><Icon name="clock" /> {inc.opened}</span>
-          <span className="text-muted"><Icon name="pin" /> {inc.platform}</span>
+          <span><Icon name="clock" /> {inc.opened}</span>
+          <span><Icon name="pin" /> {inc.platform}</span>
         </div>
       </div>
-      <nav className="inv-tabs">
+      <div className="inv-tabs">
         {tabs.map(t => (
           <button
             key={t}
@@ -172,8 +172,8 @@ function InvHeader({ inc, onBack, activeTab, setActiveTab }) {
             onClick={() => setActiveTab(t)}
           >{t}</button>
         ))}
-      </nav>
-    </header>
+      </div>
+    </div>
   );
 }
 
@@ -1541,9 +1541,9 @@ export function InvestigationView({ inc, onBack }) {
   };
 
   return (
-    <div className="inv-layout">
+    <div className="inv-layout view-enter">
       <InvHeader inc={inc} onBack={onBack} activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="inv-body">
+      <div className="inv-body-wrap">
         <InvestigationProgress
           activeTab={activeTab}
           setActiveTab={setActiveTab}

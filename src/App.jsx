@@ -27,10 +27,10 @@ export default function App() {
 
   if (route === 'investigation' && openInc) {
     return (
-      <div className="app-shell" data-theme="dark">
+      <div className="app" data-theme="dark">
         <Sidebar route={route} setRoute={r => { if (r === 'dashboard') goBack(); else setRoute(r); }} />
-        <div className="app-content sidebar-open">
-          <TopBar crumbs={['Investigations', openInc.title]} actions={[]} />
+        <div className="main">
+          <TopBar crumbs={['Investigations', openInc.id]} actions={[]} />
           <InvestigationView inc={openInc} onBack={goBack} />
         </div>
       </div>
@@ -38,9 +38,9 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell" data-theme="dark">
+    <div className="app" data-theme="dark">
       <Sidebar route={route} setRoute={setRoute} />
-      <div className="app-content sidebar-open">
+      <div className="main">
         <TopBar crumbs={['Investigations overview']} actions={[]} />
         <Dashboard onOpen={openInvestigation} />
       </div>
