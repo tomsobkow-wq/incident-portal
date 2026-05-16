@@ -27,7 +27,7 @@ export default function App() {
 
   if (route === 'investigation' && openInc) {
     return (
-      <div className="app" data-theme="dark">
+      <div className="app" data-theme="light">
         <Sidebar route={route} setRoute={r => { if (r === 'dashboard') goBack(); else setRoute(r); }} />
         <div className="main">
           <TopBar crumbs={['Investigations', openInc.id]} actions={[]} />
@@ -38,7 +38,7 @@ export default function App() {
   }
 
   return (
-    <div className="app" data-theme="dark">
+    <div className="app" data-theme="light">
       <Sidebar route={route} setRoute={setRoute} />
       <div className="main">
         <TopBar crumbs={['Investigations overview']} actions={[]} />

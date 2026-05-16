@@ -1,6 +1,8 @@
-import { useState, Fragment } from 'react';
+import React from 'react';
 import { Icon, Avatar, Sparkline, SevTag, StatusPill, AssigneeStack } from './ui.jsx';
 import { INCIDENTS, ACTIVITY, FACTOR_TRENDS, HEATMAP, SPARK } from '../data/index.js';
+
+// Dashboard — hero screen (portfolio view)
 
 export const Sidebar = ({ route, setRoute }) => {
   const items = [
@@ -61,10 +63,10 @@ export const TopBar = ({ crumbs, actions }) => (
   <div className="topbar">
     <div className="crumbs">
       {crumbs.map((c, i) => (
-        <span key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <React.Fragment key={i}>
           {i > 0 && <span className="sep">/</span>}
           <span className={i === crumbs.length - 1 ? "cur" : ""}>{c}</span>
-        </span>
+        </React.Fragment>
       ))}
     </div>
     <div className="topbar-search">
@@ -77,7 +79,7 @@ export const TopBar = ({ crumbs, actions }) => (
   </div>
 );
 
-const KpiCard = ({ label, num, delta, deltaDir, sparkData, sparkColor }) => (
+export const KpiCard = ({ label, num, delta, deltaDir, sparkData, sparkColor }) => (
   <div className="kpi">
     <div className="kpi-label">{label}</div>
     <div className="kpi-value">
@@ -88,12 +90,12 @@ const KpiCard = ({ label, num, delta, deltaDir, sparkData, sparkColor }) => (
   </div>
 );
 
-const IncidentTable = ({ onOpen }) => {
-  const [filter, setFilter] = useState("all");
+export const IncidentTable = ({ onOpen }) => {
+  const [filter, setFilter] = React.useState("all");
   const filtered = INCIDENTS.filter(i => {
     if (filter === "all") return true;
     if (filter === "active") return i.status !== "closed";
-    if (filter === "mine") return i.lead.initials === "MR";
+    if (filter === "mine") return ["MR"].includes(i.lead.initials);
     if (filter === "critical") return i.severity === "critical" || i.severity === "high";
     return true;
   });
@@ -142,7 +144,7 @@ const IncidentTable = ({ onOpen }) => {
                 <div style={{ fontSize: 11, color: "var(--ink-3)", marginTop: 2 }}>{inc.phase}</div>
               </td>
               <td>
-                <div className="progress"><span style={{ width: `${inc.progress * 100}%` }}/></div>
+                <div className="progress"><span style={{ width: `${inc.progress * 100}%` }}></span></div>
                 <div className="progress-label">{Math.round(inc.progress * 100)}%</div>
               </td>
               <td><AssigneeStack members={inc.team}/></td>
@@ -158,7 +160,7 @@ const IncidentTable = ({ onOpen }) => {
   );
 };
 
-const FactorMix = () => {
+export const FactorMix = () => {
   const max = Math.max(...FACTOR_TRENDS.map(f => f.n));
   const kindColor = { defence: "var(--sev-critical)", action: "var(--sev-high)", condition: "var(--status-progress)", org: "var(--status-review)" };
   return (
@@ -177,7 +179,7 @@ const FactorMix = () => {
   );
 };
 
-const Heatmap = () => {
+export const Heatmap = () => {
   const labels = ["1 Minor", "2", "3", "4", "5 Severe"];
   const yLabels = ["Almost certain", "Likely", "Possible", "Unlikely", "Rare"];
   return (
@@ -187,22 +189,22 @@ const Heatmap = () => {
         <div className="panel-sub">consequence × likelihood</div>
       </div>
       <div className="heatmap">
-        <div/>
+        <div></div>
         {labels.map(l => <div key={l} className="col-label">{l}</div>)}
         {HEATMAP.map((row, ri) => (
-          <Fragment key={ri}>
+          <React.Fragment key={ri}>
             <div className="row-label">{yLabels[ri]}</div>
             {row.map((v, ci) => (
               <div key={ci} className="cell" data-v={v}>{v || ""}</div>
             ))}
-          </Fragment>
+          </React.Fragment>
         ))}
       </div>
     </div>
   );
 };
 
-const ActivityFeed = () => (
+export const ActivityFeed = () => (
   <div className="side-panel-body">
     <div style={{ fontSize: 11, color: "var(--ink-3)", marginBottom: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.08em" }}>
       Recent activity
@@ -257,3 +259,4 @@ export const Dashboard = ({ onOpen }) => (
     </div>
   </div>
 );
+

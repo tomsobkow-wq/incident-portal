@@ -1,4 +1,4 @@
-// Shared UI primitives
+// Shared UI primitives — icons, chips, sparklines
 
 export const Icon = ({ name, size = 16, ...rest }) => {
   const paths = {
@@ -34,7 +34,6 @@ export const Icon = ({ name, size = 16, ...rest }) => {
     pin: <><path d="M12 22v-6"/><path d="M8 16l4-2 4 2-1-9a3 3 0 0 0-3-3h-2a3 3 0 0 0-3 3z"/></>,
     trending: <><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></>,
     shield: <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>,
-    interviews: <><circle cx="8" cy="9" r="3"/><path d="M2 20c0-3 2.7-5 6-5"/><path d="M14 9h8M14 13h8M14 17h5"/></>,
   };
   return (
     <svg className="ico" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" {...rest}>
@@ -42,12 +41,6 @@ export const Icon = ({ name, size = 16, ...rest }) => {
     </svg>
   );
 };
-
-export const AiSparkle = ({ size = 13 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>
-  </svg>
-);
 
 export const Avatar = ({ initials, size }) => {
   const hashes = { MR: 20, JT: 140, DC: 220, ES: 300, PN: 40, KA: 190, HW: 260, LD: 100, RG: 350, JP: 80, TH: 160 };
@@ -84,10 +77,10 @@ export const SevTag = ({ level }) => (
 );
 
 export const StatusPill = ({ status }) => {
-  const labels = { open: "Open", progress: "In progress", review: "In review", closed: "Closed", draft: "Draft", complete: "Complete", scheduled: "Scheduled" };
+  const labels = { open: "Open", progress: "In progress", review: "In review", closed: "Closed", draft: "Draft" };
   return (
     <span className={`status ${status}`}>
-      <span className="dot"></span>{labels[status] || status}
+      <span className="dot"></span>{labels[status]}
     </span>
   );
 };
@@ -98,21 +91,3 @@ export const AssigneeStack = ({ members }) => (
   </div>
 );
 
-export const Field = ({ label, v, set, placeholder, type = "text", rows }) => (
-  <label className="field">
-    <span className="field-label">{label}</span>
-    {rows ? (
-      <textarea className="field-input field-textarea" value={v} onChange={e => set(e.target.value)} placeholder={placeholder} rows={rows}/>
-    ) : (
-      <input type={type} className="field-input" value={v} onChange={e => set(e.target.value)} placeholder={placeholder}/>
-    )}
-  </label>
-);
-
-export const ModalOverlay = ({ onClose, children, width = 460 }) => (
-  <div className="modal-overlay" onClick={onClose}>
-    <div className="modal-box" style={{ width, maxWidth: "92vw", maxHeight: "90vh", display: "flex", flexDirection: "column" }} onClick={e => e.stopPropagation()}>
-      {children}
-    </div>
-  </div>
-);
